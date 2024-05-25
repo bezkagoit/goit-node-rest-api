@@ -1,8 +1,8 @@
 import contactsServices from "../services/contactsServices.js";
 
 export const getAllContacts = async (req, res, next) => {
-    const contacts = await contactsServices.listContacts();
     try {
+        const contacts = await contactsServices.listContacts();
         res.status(200).json(contacts);
     } catch (error) {
         next(error);
@@ -10,9 +10,9 @@ export const getAllContacts = async (req, res, next) => {
 };
 
 export const getOneContact = async (req, res, next) => {
+  try{
     const { id } = req.params;
     const contact = await contactsServices.getContactById(id);
-  try{
     if (contact) {
         res.status(200).json(contact);
     } else {
@@ -51,3 +51,20 @@ export const updateContact = async (req, res) => {
     }
     res.status(200).json(data);
 };
+
+export const updateContactFavorite = async (req, res) => {
+    const {id} = req.params;
+    const {favorite} = req.body;
+
+    contactsServices 
+    .updateContactFavorite(id, {favorite})
+    .then((data) => {
+        if (!data) {
+            return res.sendStatus(404).json({message: "Not found"});
+        }
+        res.status(200).json(data);
+    })
+    .catch((error) => {
+        next(error);
+    })
+}
