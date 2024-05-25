@@ -30,8 +30,8 @@ return await Contact.findByIdAndUpdate(contactId, newData, {new: true});
     
 }
 
-async function updateContactFavorite(contactId, newData) {
-  return await Contact.findByIdAndUpdate(contactId, newData);
+async function updateContactFavorite(contactId, body) {
+  return await Contact.findByIdAndUpdate(contactId, body);
 }
 
 export default {
