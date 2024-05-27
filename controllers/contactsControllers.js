@@ -1,53 +1,91 @@
+import mongoose from "mongoose";
 import contactsServices from "../services/contactsServices.js";
 
-export const getAllContacts = async (req, res, next) => {
-    const contacts = await contactsServices.listContacts();
-    try {
-        res.status(200).json(contacts);
-    } catch (error) {
-        next(error);
-    }
+export const getAllContacts = (req, res) => {
+    contactsServices
+        .listContacts()
+        .then((contacts) => res.status(200).json(contacts))
+        .catch((error) => res.status(500).json({ error: error.message }));
 };
 
-export const getOneContact = async (req, res, next) => {
+export const getOneContact = (req, res) => {
     const { id } = req.params;
-    const contact = await contactsServices.getContactById(id);
-  try{
-    if (contact) {
-        res.status(200).json(contact);
-    } else {
-        res.status(404).json({ message: "Not found" });
-    }
-  }
-  catch(error) {
-    next(error);}
+
+    contactsServices
+        .getContactById(id)
+        .then((contact) => {
+            if (contact !== null) {
+                res.status(200).json(contact);
+            } else {
+                res.status(404).json({ message: "Not found" });
+            }
+        })
+        .catch(() => res.status(404).json({ message: "Not found" }));
 };
 
-export const deleteContact = async (req, res, next) => {
+export const deleteContact = (req, res) => {
     const { id } = req.params;
-    const contact = await contactsServices.removeContact(id);
-    if (!contact) {
-        return next(HttpError(404, "Not found"));
-    }   res.status(200).send(contact);
+
+    contactsServices
+        .removeContact(id)
+        .then((contact) => {
+            if (contact !== null) {
+                res.status(200).json(contact);
+            } else {
+                res.status(404).json({ message: "Not found" });
+            }
+        })
+        .catch(() => res.status(500).json({ message: "Failed to delete contact" }));
 };
 
-export const createContact = async (req, res, next) => {
+export const createContact = (req, res) => {
     const { name, email, phone } = req.body;
-   const contact = await contactsServices.addContact(name, email, phone);
-   try {
-    res.status(201).json(contact);
-   } catch (error) {
-    next(error);
-   }
+
+    contactsServices
+        .addContact(name, email, phone)
+        .then((contact) => res.status(201).json(contact))
+        .catch(() => res.status(400).json({ message: "Failed to create contact" }));
 };
 
-export const updateContact = async (req, res) => {
-    if (Object.keys(req.body).length === 0) {return res.sendStatus(400).json({message: "missing fields"})
+export const updateContact = (req, res) => {
+  const { id } = req.params;
+
+  const { name, email, phone } = req.body;
+
+  if (name === undefined && email === undefined && phone === undefined) {
+    return res
+      .status(400)
+      .json({ message: "Body must have at least one field" });
+  }
+
+  contactsServices
+    .updateContact(id, name, email, phone)
+    .then((contact) => {
+      if (contact !== null) {
+        res.status(200).json(contact);
+      } else {
+        res.status(404).json({ message: "Not found" });
+      }
+    })
+    .catch(() => res.status(404).json({ message: "Not found" }));
+};
+
+export const updateContactFavorite = (req, res) => {
+    const { id } = req.params;
     
-    ;}
-    const data = await contactsServices.updateContact(req.params.id, req.body);
-    if (!data) {
-        return res.sendStatus(404).json({message: "Not found"});
+    const { favorite } = req.body;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
     }
-    res.status(200).json(data);
+
+  contactsServices
+    .updateContactFavorite(id, {favorite})
+    .then((contact) => {
+      if (contact === null) {
+        return res.status(404).json({ message: "Not found" });
+      }
+      res.status(200).json(contact);
+    })
+    .catch((err) => res.status(500).json("Internal Server Error"));
 };
