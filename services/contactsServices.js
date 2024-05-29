@@ -1,36 +1,40 @@
 import Contact from "../models/contacts.js";
 
-async function listContacts() {
+async function listContacts(ownerId , next) {
   try {
-    const contacts = await Contact.find();
+    const contacts = await Contact.find({ owner: ownerId });
     return contacts;
-  } catch (error) { next(error) }
+  } catch (error) 
+{
+    next(error);}
 }
 
-async function getContactById(contactId) {
+async function getContactById(contactId, ownerId, next) {
   try {
-    const data = await listContacts();
-    const contact = data.find((contact) => contact.id === contactId);
-    return contact || null;
+    const data = await Contact.findOne({ _id: contactId, owner: ownerId });
+    return data;
+   
   } catch (error) { next(error) }
 }
  
-async function removeContact(contactId) {
+async function removeContact(contactId, ownerId , next) {
   
   try {
-    const data = await Contact.findByIdAndDelete(contactId);
+    const data = await Contact.findByIdAndDelete({
+      _id: contactId, owner: ownerId});
     return data;
   } catch (error) {
     next(error);
   }
 }
 
-async function addContact (name, email, phone, favorite = false) {
+async function addContact (ownerId, name, email, phone, favorite = false , next) {
   const newContact = {
     name: name,
     email: email,
     phone: phone,
     favorite: favorite,
+    owner: ownerId,
   }
     
     try {
@@ -44,9 +48,12 @@ async function addContact (name, email, phone, favorite = false) {
     
 }
 
-async function updateContact(contactId, name, email, phone, favorite) {
+async function updateContact(contactId, ownerId, name, email, phone, favorite, next) {
 
-  const contactToUpdate = await getContactById(contactId);
+  const contactToUpdate = await getContactById({
+    _id: contactId,
+    owner: ownerId,
+  });
   
   if (contactToUpdate === null) {
     return null;
@@ -69,7 +76,7 @@ try {
   }
   };
   
-async function updateContactFavorite(id, favoriteStatus) {
+async function updateContactFavorite(id, favoriteStatus, next) {
   try {
     const result = await Contact.findByIdAndUpdate(id, favoriteStatus,{new: true} );
     return result;

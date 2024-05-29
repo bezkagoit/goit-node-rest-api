@@ -10,18 +10,20 @@ import {
   updateContactFavorite
 } from "../controllers/contactsControllers.js";
 
+import authMiddleware from "../middlewares/auth.js";
+
 const contactsRouter = express.Router();
 
-contactsRouter.get("/", getAllContacts);
+contactsRouter.get("/", authMiddleware,  getAllContacts);
 
-contactsRouter.get("/:id", getOneContact);
+contactsRouter.get("/:id", authMiddleware, getOneContact);
 
-contactsRouter.delete("/:id", deleteContact);
+contactsRouter.delete("/:id", authMiddleware, deleteContact);
 
-contactsRouter.post("/", validateBody(schema.createContactSchema) ,createContact);
+contactsRouter.post("/",  authMiddleware,  validateBody(schema.createContactSchema) ,createContact);
 
-contactsRouter.put("/:id", validateBody(schema.updateContactSchema) ,updateContact);
+contactsRouter.put("/:id", authMiddleware, validateBody(schema.updateContactSchema) ,updateContact);
 
-contactsRouter.patch("/:id/favorite", updateContactFavorite);
+contactsRouter.patch("/:id/favorite",  authMiddleware, updateContactFavorite);
 
 export default contactsRouter;
