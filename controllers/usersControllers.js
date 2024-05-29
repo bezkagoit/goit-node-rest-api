@@ -2,14 +2,15 @@ import userService from "../services/usersServices.js";
 
 async function register(req, res, next) {
   try {
-    const {email, password} = req.body;
-    const result = await userService.registerUser({email, password});
+    const {email, password, subscription="starter"} = req.body;
+    const result = await userService.registerUser({email, password, subscription});
     if (result === null) {
       res.status(409).send({ message: "User already registered" });
     }
     return res.status(201).send({
       user: {
         email: result.email,
+        subscription: result.subscription,
       }
     })
   } catch (error) {
@@ -30,6 +31,7 @@ async function login(req, res, next) {
       token: result.token,
       user: {
         email: result.user.email,
+        subscription: result.user.subscription,
       },
     });
   } catch (error) {
@@ -63,4 +65,16 @@ async function logout(req, res, next) {
   }
 }
 
-export default { register, login, logout , current};
+async function updateSubscription(req, res, next) {
+  try {
+    const result = await userService.updateSubscription(
+      req.user.id,
+      req.body.subscription
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export default { register, login, logout , current , updateSubscription};

@@ -2,14 +2,14 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/users.js";
 
-async function registerUser({email, password}) {
+async function registerUser({email, password, subscription}) {
   try {
     const user = await User.findOne({ email });
     if (user !== null) {
       return null;
     }
     const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: passwordHash });
+    const newUser = await User.create({ email, password: passwordHash , subscription});
     return newUser;
   } catch (error) {
     throw new Error(error.message);
@@ -68,4 +68,12 @@ async function logoutUser(userId) {
   await User.findByIdAndUpdate(userId, { token: null }, { new: true });
 }
 
-export default { registerUser, loginUser, logoutUser, currentUser };
+async function updateSubscription(userId, subscription) {
+ try {
+  const data = await User.findByIdAndUpdate(userId, { subscription }, { new: true });  
+  return data;
+ } catch (error) {
+  throw new Error(error.message);
+ }
+}
+export default { registerUser, loginUser, logoutUser, currentUser, updateSubscription };

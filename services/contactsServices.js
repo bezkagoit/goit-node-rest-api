@@ -1,9 +1,12 @@
 import Contact from "../models/contacts.js";
 
-async function listContacts(ownerId , next) {
+async function listContacts(filter , next, page, limit) {
   try {
-    const contacts = await Contact.find({ owner: ownerId });
-    return contacts;
+    const skip = (page - 1) * limit;
+    const contacts = await Contact.find(filter).skip(skip).limit(limit);
+    const total = await Contact.countDocuments(filter);
+    
+    return {contacts, page, limit, total};
   } catch (error) 
 {
     next(error);}
