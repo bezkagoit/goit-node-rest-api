@@ -1,83 +1,101 @@
-import * as fs from 'node:fs/promises';
-import path from 'node:path';
-import crypto from 'node:crypto';
+import Contact from "../models/contacts.js";
 
-const contactsPath = path.resolve('db', 'contacts.json');
-
-async function readContacts() {
-  const data = await fs.readFile(contactsPath, { encoding: 'utf-8' });
-
-  return JSON.parse(data);
+async function listContacts(filter , next, page, limit) {
+  try {
+    const skip = (page - 1) * limit;
+    const contacts = await Contact.find(filter).skip(skip).limit(limit);
+    const total = await Contact.countDocuments(filter);
+    
+    return {contacts, page, limit, total};
+  } catch (error) 
+{
+    next(error);}
 }
 
-async function writeContacts(contacts) {
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, undefined, 2));
-}
-
-async function listContacts() {
-  const contacts = await readContacts();
-  return contacts;
-}
-
-async function getContactById(id) {
-  const contacts = await readContacts();
-
-  const contact = contacts.find(contact => contact.id === id);
-
-  if (typeof contact === 'undefined') {
-    return null;
+async function getContactById(ownerId, contactId) {
+  try {
+    const data = await Contact.findOne({ _id: contactId, owner: ownerId });
+    return data;
+  } catch (error) {
+    throw error;
   }
-
-  return contact;
 }
 
-async function addContact(name, email,phone) {
-  const newContact = {
-    id: crypto.randomUUID(),
-    name,
-    email,
-    phone
-  };
- const contacts = await readContacts();
- contacts.push(newContact);
- await fs.writeFile(contactsPath, JSON.stringify(contacts, undefined, 2));
- return newContact;
-  }
  
-
-
-async function removeContact(id) {
-  const contacts = await readContacts();
-
-  const index = contacts.findIndex(contact => contact.id === id);
-
-  if (index === -1) {
-    return null;
+async function removeContact(contactId, ownerId) {
+  
+  try {
+    const data = await Contact.findOneAndDelete({ _id: contactId, owner: ownerId});
+    return data;
+  } catch (error) {
+    throw (error);
   }
-
-  const removedContact = contacts[index];
-
-  contacts.splice(index, 1);
-  await writeContacts(contacts);
-  return removedContact;
 }
 
-async function updateContact(id, newData) {
-  const contacts = await readContacts();
-  const index = contacts.findIndex(contact => contact.id === id);
-  if (index === -1) {
-    return null;
+async function addContact (ownerId, name, email, phone, favorite = false ) {
+  const newContact = {
+    name: name,
+    email: email,
+    phone: phone,
+    favorite: favorite,
+    owner: ownerId,
   }
+    
+    try {
+      const data = await Contact.create(newContact);
+      console.log(data);
+      return data;
+        }
+       catch (error) {
+      throw (error);
+    }
+    
+}
 
-  contacts[index] = {...contacts[index], ...newData};
-  await writeContacts(contacts);
-  return contacts[index];
+async function updateContact(contactId, ownerId, name, email, phone, favorite) {
+  try {
+    const contactToUpdate = await Contact.findOne({ _id: contactId, owner: ownerId });
+    
+    if (contactToUpdate === null) {
+      return null;
+    }
+
+    const newContact = {
+      name: name !== undefined ? name : contactToUpdate.name,
+      email: email !== undefined ? email : contactToUpdate.email,
+      phone: phone !== undefined ? phone : contactToUpdate.phone,
+      favorite: favorite !== undefined ? favorite : contactToUpdate.favorite,
+    };
+
+    const result = await Contact.findByIdAndUpdate(contactId, newContact, {
+      new: true,
+    });
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}
+
+  
+async function updateContactFavorite(contactId, ownerId, favoriteStatus) {
+  try {
+    const contact = await Contact.findOneAndUpdate(
+      { _id: contactId, owner: ownerId },
+      { favorite: favoriteStatus.favorite },
+      { new: true }
+    );
+    return contact;
+  } catch (error) {
+    throw error;
+  }
 }
 
 export default {
-  listContacts,
-  getContactById,
-  addContact,
-  removeContact,
-  updateContact
+    listContacts,
+    getContactById,
+    removeContact,
+    addContact,
+    updateContact,
+    updateContactFavorite,
 };
