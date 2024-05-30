@@ -10,7 +10,7 @@ const router = express.Router();
 router.post("/register", validateBody(createUserSchema), UserController.register);
 router.post("/login", validateBody(loginUserSchema), UserController.login);
 router.get("/current", authMiddleware, UserController.current);
-router.get("/logout", authMiddleware, UserController.logout);
+router.post("/logout", authMiddleware, UserController.logout);
 router.patch("/", authMiddleware, validateBody(updateSubscriptionSchema) , UserController.updateSubscription);
 
 export default router;
