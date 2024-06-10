@@ -3,6 +3,7 @@ import * as fs from "node:fs/promises";
 import path from "node:path";
 import Jimp from "jimp";
 
+
 async function register(req, res, next) {
   try {
     const { email, password, subscription = "starter" } = req.body;
@@ -11,6 +12,7 @@ async function register(req, res, next) {
       password,
       subscription,
     });
+
     if (result === null) {
       res.status(409).send({ message: "User already registered" });
     }
@@ -138,6 +140,38 @@ async function changeAvatar(req, res, next) {
   }
 }
 
+async function verifyEmail(req, res, next) {
+  try {
+    const { verificationToken } = req.params;
+    const user = await userService.verifyUser(verificationToken);
+    if (user === null) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    return res.status(200).send({ message: "Verification successful" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resendVerifyEmail(req, res, next) {
+  try {
+    const { email } = req.body;
+    const user = await userService.resendVerifyEmail(email);
+
+    if (user === true) {
+      return res.status(400).send({ message: "Verification has been passed" });
+    }
+    if (user === null) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    return res.status(200).send({ message: "Verification email sent" });
+  } 
+   catch (error) {
+    next(error);
+  }
+}
+
 export default {
   register,
   login,
@@ -146,4 +180,6 @@ export default {
   updateSubscription,
   avatar,
   changeAvatar,
+  verifyEmail,
+  resendVerifyEmail,
 };
