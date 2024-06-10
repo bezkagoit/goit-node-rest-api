@@ -2,6 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/users.js";
 import gravatar from "gravatar";
+import mail from "../mail.js";
+import crypto from "node:crypto";
 
 async function registerUser({ email, password, subscription }) {
   try {
@@ -10,11 +12,22 @@ async function registerUser({ email, password, subscription }) {
       return null;
     }
     const passwordHash = await bcrypt.hash(password, 10);
+
+    const verificationToken = crypto.randomUUID();
+
+    mail.sendEmail({
+      to: email,
+      from: "noreply@domain.com",
+      subject: "Welcome to our platform!",
+      html: `Please confirm your email address by clicking on <a href='http://localhost:3000/users/verify/${verificationToken}'> link </a>`,
+      text: `To confirm your email address please use link http://localhost:3000/users/verify/${verificationToken}`,
+    });
     const newUser = await User.create({
       email,
       password: passwordHash,
       subscription,
       avatarURL: gravatar.url(email),
+      verificationToken,
     });
     return newUser;
   } catch (error) {
@@ -110,6 +123,45 @@ async function getUserAvatar(id) {
   }
 }
 
+async function verifyUser(verificationToken) {
+  try {
+    const user = await User.findOne({ verificationToken });
+    if (user === null) {
+      return null;
+    }
+    await User.findByIdAndUpdate(user._id, {
+      verify: true,
+      verificationToken: null,
+    });
+    return user;
+  } catch (error) {
+    throw new Error("Error verify user");
+  }
+}
+
+async function resendVerifyEmail(email) {
+  try {
+    const user = await User.findOne({ email });
+    if (user === null) {
+      return null;
+    }
+
+    if (user.verify === true) {
+      return true;
+    }
+    mail.sendEmail({
+      to: email,
+      from: "noreply@domain.com",
+      subject: "Welcome to our platform!",
+      html: `Please confirm your email address by clicking on <a href='http://localhost:3000/users/verify/${user.verificationToken}'> link </a>`,
+      text: `To confirm your email address please use link http://localhost:3000/users/verify/${user.verificationToken}`,
+    });
+    return user;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export default {
   registerUser,
   loginUser,
@@ -118,4 +170,6 @@ export default {
   updateSubscription,
   updateUserAvatar,
   getUserAvatar,
+  verifyUser,
+  resendVerifyEmail,
 };

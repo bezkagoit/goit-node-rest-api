@@ -6,6 +6,7 @@ import {
   createUserSchema,
   loginUserSchema,
   updateSubscriptionSchema,
+  verificationEmailSchema,
 } from "../schemas/usersSchemas.js";
 import authMiddleware from "../middlewares/auth.js";
 import uploadMiddleware from "../middlewares/upload.js";
@@ -33,5 +34,10 @@ router.patch(
   uploadMiddleware.single("avatar"),
   UserController.changeAvatar
 );
+
+router.get("/verify/:verificationToken", UserController.verifyEmail);
+router.post("/verify/", 
+validateBody(verificationEmailSchema),
+UserController.resendVerifyEmail);
 
 export default router;
