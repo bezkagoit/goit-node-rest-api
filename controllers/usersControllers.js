@@ -38,6 +38,10 @@ async function login(req, res, next) {
         .send({ message: "Email or password is incorrect" });
     }
 
+    if (result === false) {
+      return res.status(401).send({ message: "Please verify your email" });
+    }
+    
     return res.status(200).send({
       token: result.token,
       user: {

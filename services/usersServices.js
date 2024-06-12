@@ -50,7 +50,10 @@ async function loginUser(email, password) {
       console.log("Password does not match");
       throw new Error("Email or password is incorrect");
     }
-
+ if (user.verify === false) {
+      throw new Error("Please verify your email");
+    }
+    
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
